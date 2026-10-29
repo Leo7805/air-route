@@ -44,11 +44,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!token) {
+    return () => {
+      // Invalidate login requests too, even when no restoration is running.
       sessionVersion.current += 1;
-      validatedToken.current = null;
-      setAccount(null);
-      setIsLoading(false);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!token) {
       return;
     }
 
@@ -96,11 +99,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [logout, token]);
 
   const login = useCallback(async (username: string, password: string) => {
-    const version = ++sessionVersion.current;
-    validatedToken.current = null;
+    // A replacement login must never retain the previous account on failure.
+    logout();
+    const version = sessionVersion.current;
     setIsLoading(true);
     try {
       const { access_token } = await api.login(username, password);
+      if (version !== sessionVersion.current) {
+        return;
+      }
       const currentAccount = await api.me(access_token);
 
       if (version !== sessionVersion.current) {
@@ -118,7 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       throw reason;
     }
-  }, []);
+  }, [logout]);
 
   const value = useMemo(
     () => ({
