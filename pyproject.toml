@@ -25,7 +25,11 @@ dev = [
 ]
 
 [tool.setuptools]
-py-modules = []
+package-dir = {"" = "backend"}
+
+[tool.setuptools.packages.find]
+where = ["backend"]
+include = ["airroute*"]
 
 [tool.pytest.ini_options]
 testpaths = ["backend/tests"]

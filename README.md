@@ -39,7 +39,20 @@ The application is designed to support future integration with external aviation
 
 ## Getting Started
 
-Local setup instructions will be finalised after the project structure is reorganised.
+Create a Python 3.13 environment and install the project:
+
+```bash
+python3.13 -m venv .venv
+.venv/bin/python -m pip install -e ".[dev]"
+```
+
+Start the modular backend from the project root:
+
+```bash
+PYTHONPATH=. .venv/bin/python backend/run.py
+```
+
+The server listens on `http://127.0.0.1:5000` and exposes Swagger UI at `/`.
 
 ## Code quality
 
@@ -63,29 +76,13 @@ ruff format .
 ruff check .
 ```
 
-Start the backend from the project root:
+Run the complete isolated suite:
 
 ```bash
-python z5596858_api.py
+PYTHONPATH=. .venv/bin/python -m pytest -q
 ```
 
-The current test files are not yet safe to run directly: the unit test
-module contains a test that initialises the default `assignment2.db`, and
-the required `airports.csv`, `airlines.csv`, and `routes.csv` fixtures are
-not present in this checkout. Before running tests, move database setup into
-a temporary-database fixture and restore the CSV fixtures under a dedicated
-test fixture directory.
-
-After that preparation, run the unit tests with:
-
-```bash
-python -m pytest z5596858_test_unit.py -q
-```
-
-The HTTP integration tests also require the backend to be running at
-`http://127.0.0.1:5000` in a separate terminal and should use an isolated
-test database:
-
-```bash
-python -m pytest z5596858_tests.py -q
-```
+The adapters under `backend/tests/` preserve the original coursework
+assertions while targeting the standalone modular application, temporary
+SQLite databases, and an isolated HTTP server on port `5055`. Run HTTP
+tests sequentially to avoid competing for that port.

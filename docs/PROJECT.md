@@ -67,17 +67,22 @@ flowchart LR
 
 ### 3.3 Modules & Project Structure
 
-The backend currently lives primarily in one Python file. The table describes **logical modules**, not separate files that already exist.
+The backend uses a lightweight application package under `backend/airroute/`.
+The original coursework files remain unchanged as historical reference and
+are not runtime dependencies of the modular application.
 
 | Module | Responsibility | Current / Planned Location |
 | --- | --- | --- |
-| Authentication & Accounts | JWT login, roles, account management | `z5596858_api.py` / later `backend/` |
-| Aviation Catalogue | Airport, airline and route queries | `z5596858_api.py` / later `backend/` |
-| Data Import | CSV parsing, validation and transactional replacement | `z5596858_api.py` / later `backend/` |
-| Travel Plans | Ownership, plan CRUD, route associations | `z5596858_api.py` / later `backend/` |
-| Export | JSON and PNG generation | `z5596858_api.py` / later `backend/` |
+| Application factory | Flask, extensions, configuration and namespace registration | `backend/airroute/__init__.py` |
+| Configuration and extensions | Runtime settings and unbound Flask extensions | `backend/airroute/config.py`, `backend/airroute/extensions.py` |
+| Canonical models | Six SQLAlchemy models and relationships | `backend/airroute/models.py` |
+| Authentication & Accounts | JWT login, roles, account management | `backend/airroute/auth.py`, `backend/airroute/api/auth.py`, `backend/airroute/api/accounts.py` |
+| Aviation Catalogue | Airport, airline and route queries | `backend/airroute/aviation.py`, `backend/airroute/api/` |
+| Data Import | CSV parsing, validation and transactional replacement | `backend/airroute/csv_import.py`, `backend/airroute/api/imports.py` |
+| Travel Plans | Ownership, plan CRUD, route associations | `backend/airroute/travel_plans.py`, `backend/airroute/api/travel_plans.py` |
+| Export | JSON and PNG generation | `backend/airroute/exports.py`, `backend/airroute/api/travel_plans.py` |
 | Web UI | Browser-based interaction with the existing API | `frontend/` (planned) |
-| Tests | HTTP integration and isolated unit tests | `z5596858_tests.py`, `z5596858_test_unit.py` |
+| Tests | Isolated unit and HTTP regression adapters | `backend/tests/` |
 
 **Documentation rule:** Record major modules and key entry points only. Update this section and the architecture diagram when responsibilities or module relationships change—not whenever a file or function changes.
 
@@ -151,13 +156,15 @@ See **[API Reference](API.md)** for methods, endpoints, permissions and error ha
 - **How to Run (current backend):**
 
   ```bash
-  python -m pip install -r requirements.txt
-  python z5596858_api.py
-  # In another terminal, with the server running:
-  python -m pytest z5596858_tests.py -q
+  python3.13 -m venv .venv
+  .venv/bin/python -m pip install -e ".[dev]"
+  PYTHONPATH=. .venv/bin/python backend/run.py
+  # In another terminal:
+  PYTHONPATH=. .venv/bin/python -m pytest -q
   ```
 
-  Swagger UI: `http://127.0.0.1:5000/`. Run database-changing HTTP tests against an isolated database rather than development data.
+  Swagger UI: `http://127.0.0.1:5000/`. The test adapters start the
+  application with temporary SQLite databases and an isolated HTTP server.
 
 - **Definition of Done:** Frontend P0 actions work against the actual API; README has reproducible setup instructions and screenshots; the project can be listed as a completed Side Project.
 - **Known Limitations:** Imported demo data only; no live flight schedules, fares or booking; frontend not yet implemented; local runtime is the primary target.
