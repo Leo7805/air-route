@@ -2,12 +2,12 @@ import csv
 import io
 import sqlite3
 from pathlib import Path
-import requests
-import pytest
 from uuid import uuid4
-from pathlib import Path
 
+import pytest
+import requests
 
+pytestmark = pytest.mark.usefixtures("isolated_http_server")
 
 BASE_URL = "http://127.0.0.1:5000"
 
@@ -858,7 +858,6 @@ def test_account_credential_boundaries(account_cleanup):
 def test_admin_can_import_all_datasets():
     """Verify that Admin can import all three CSV datasets."""
 
-    from pathlib import Path
 
     headers = login("admin", "admin")
 

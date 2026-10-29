@@ -36,7 +36,7 @@ DATASET_NAMES = {"airports.csv", "airlines.csv", "routes.csv"}
 
 class ModularTestModule(ModuleType):
     def __init__(self, app):
-        super().__init__("z5596858_api")
+        super().__init__("airroute_test_module")
         self.app = app
         self.db = db
         self.Account = Account
@@ -110,7 +110,7 @@ def isolated_http_server(tmp_path_factory):
     finally:
         probe.close()
 
-    import z5596858_tests as test_module
+    import test_regression_http as test_module
 
     tmp_path = tmp_path_factory.mktemp("http-database")
     api_module, app = load_modular_api(tmp_path)
@@ -125,6 +125,8 @@ def isolated_http_server(tmp_path_factory):
 
     api_module.init_db()
     monkeypatch.chdir(FIXTURE_DIR)
+    test_module.PROJECT_DIR = FIXTURE_DIR
+    test_module.DB_PATH = database_path
     monkeypatch.setattr(test_module, "BASE_URL", f"http://127.0.0.1:{port}")
     monkeypatch.setattr(test_module, "PROJECT_DIR", FIXTURE_DIR)
     monkeypatch.setattr(test_module, "DB_PATH", database_path)

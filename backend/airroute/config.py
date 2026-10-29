@@ -6,7 +6,7 @@ class Config:
     SQLALCHEMY_DATABASE_URI = "sqlite:///assignment2.db"
     JWT_SECRET_KEY = os.environ.get(
         "JWT_SECRET_KEY",
-        "local-assignment2-development-key-for-z5596858",
+        "local-airroute-development-key",
     )
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
     TESTING = False

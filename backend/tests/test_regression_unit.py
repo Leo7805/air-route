@@ -1,14 +1,40 @@
 
-from passlib.hash import pbkdf2_sha256
-from z5596858_api import app, db, Account, init_db, CSV_SCHEMAS
 import pytest
+from conftest import FIXTURE_DIR, fixture_path_class, load_modular_api
+from passlib.hash import pbkdf2_sha256
+
+from backend.airroute import create_app, init_db
+from backend.airroute.csv_import import (
+    CSV_SCHEMAS,
+    ReferenceConflictError,
+    parse_csv,
+    validate_references,
+)
+from backend.airroute.extensions import db
+from backend.airroute.models import Account
+
+app = None
 
 
-def test_database_initialisation():
+@pytest.fixture(autouse=True)
+def coursework_fixture_paths(monkeypatch):
+    import pathlib
+
+    monkeypatch.chdir(FIXTURE_DIR)
+    monkeypatch.setattr(pathlib, "Path", fixture_path_class())
+
+
+def test_database_initialisation(tmp_path):
     # Initialise database
-    init_db()
+    modular_app = create_app(
+        {
+            "TESTING": True,
+            "SQLALCHEMY_DATABASE_URI": f"sqlite:///{tmp_path / 'init.db'}",
+        }
+    )
+    init_db(modular_app)
 
-    with app.app_context():
+    with modular_app.app_context():
         # Query default accounts
         admin = db.session.scalar(
             db.select(Account).filter_by(username="admin")
@@ -90,7 +116,6 @@ def test_csv_parsing():
     """
 
     from pathlib import Path
-    from z5596858_api import parse_csv
 
     primary_keys = {
         "airports": "airport_id",
@@ -124,7 +149,6 @@ def test_valid_references():
     """Verify that the provided CSV datasets have valid references."""
 
     from pathlib import Path
-    from z5596858_api import parse_csv, validate_references
 
     airports = parse_csv("airports", Path("airports.csv").read_bytes())
     airlines = parse_csv("airlines", Path("airlines.csv").read_bytes())
@@ -137,13 +161,9 @@ def test_valid_references():
 def test_missing_airline_reference():
     """Verify that routes cannot reference missing airlines."""
 
-    import pytest
     from pathlib import Path
-    from z5596858_api import (
-        parse_csv,
-        validate_references,
-        ReferenceConflictError,
-    )
+
+    import pytest
 
     airports = parse_csv("airports", Path("airports.csv").read_bytes())
     airlines = parse_csv("airlines", Path("airlines.csv").read_bytes())
@@ -159,9 +179,9 @@ def test_missing_airline_reference():
 def test_mismatched_airport_iata():
     """Verify that airport IDs and IATA codes must match."""
 
-    import pytest
     from pathlib import Path
-    from z5596858_api import parse_csv, validate_references
+
+    import pytest
 
     airports = parse_csv("airports", Path("airports.csv").read_bytes())
     airlines = parse_csv("airlines", Path("airlines.csv").read_bytes())
@@ -186,7 +206,6 @@ def test_invalid_csv_field_values(dataset, column, value):
     import csv
     import io
     from pathlib import Path
-    from z5596858_api import parse_csv
 
     with Path(f"{dataset}.csv").open(
         encoding="utf-8-sig", newline=""
@@ -212,28 +231,7 @@ def test_invalid_csv_field_values(dataset, column, value):
 
 @pytest.fixture
 def isolated_import_api(tmp_path, monkeypatch):
-    """Load the API with its relative SQLite path confined to a temporary folder."""
-    import importlib.util
-    import sys
-    from pathlib import Path
-    from uuid import uuid4
-    import flask
-
-    name = f"import_test_{uuid4().hex}"
-    spec = importlib.util.spec_from_file_location(
-        name, Path(__file__).with_name("z5596858_api.py")
-    )
-    module = importlib.util.module_from_spec(spec)
-    monkeypatch.setitem(sys.modules, name, module)
-    original_flask = flask.Flask
-    with monkeypatch.context() as setup:
-        setup.setattr(flask, "Flask", lambda name: original_flask(
-            name, instance_path=str(tmp_path)
-        ))
-        spec.loader.exec_module(module)
-
-    with module.app.app_context():
-        assert Path(module.db.engine.url.database) == tmp_path / "assignment2.db"
+    module, _ = load_modular_api(tmp_path)
     module.init_db()
     yield module
     with module.app.app_context():
@@ -347,7 +345,6 @@ def test_import_integer_overflow(
 ] + [("airports", "altitude", -(2 ** 63))])
 def test_csv_integer_boundaries(dataset, column, value):
     """Requirement 2: accept SQLite integer endpoints where field constraints allow."""
-    from z5596858_api import parse_csv
 
     records = parse_csv(dataset, import_csv_bytes(dataset, {column: str(value)}))
     assert records[0][column] == value
@@ -361,6 +358,7 @@ def test_concurrent_imports_preserve_references(
     import csv
     import io
     import threading
+
     from sqlalchemy import event
 
     module = isolated_import_api
@@ -663,7 +661,6 @@ def login_isolated_account(module, client, username, password):
 def test_image_export_without_future_plans_returns_meaningful_404(
     isolated_import_api, import_client
 ):
-    module = isolated_import_api
     client, headers = import_client
 
     response = client.get(
@@ -767,7 +764,6 @@ def test_exports_are_isolated_to_authenticated_account(
 def test_unsupported_export_format_returns_400(
     isolated_import_api, import_client
 ):
-    module = isolated_import_api
     client, headers = import_client
 
     response = client.get(
