@@ -1,0 +1,9 @@
+{
+  "name": "airroute",
+  "style": "minimal",
+  "typescript": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/styles.css"
+  }
+}
