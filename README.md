@@ -2,87 +2,100 @@
 
 **Airline Route Explorer & Travel Planner**
 
-Explore aviation networks, discover airline routes, and organise personal travel plans.
+AirRoute is a local full-stack application for exploring imported airport,
+airline and route data and organising private travel plans.
 
-## Overview
+## Features
 
-AirRoute is a RESTful application for exploring aviation data and managing personal travel plans.
+- JWT login with User and Admin roles
+- Searchable, paginated airport, airline and route explorer
+- Private travel-plan CRUD with route associations
+- JSON exports and PNG timelines for upcoming plans
+- Admin CSV imports with validation, atomic replacement and route protection
+- Admin account creation, activation, deactivation and deletion
+- Swagger/OpenAPI documentation for the Flask API
 
-It provides searchable airport, airline, and route information, along with user authentication, travel plan management, data imports, and export capabilities.
+## Stack and structure
 
-## Key Features
+- **Backend:** Python 3.13, Flask, Flask-RESTX, SQLAlchemy, SQLite
+- **Frontend:** React, TypeScript, Vite
+- **Authentication:** Flask-JWT-Extended and hashed passwords
+- **PNG export:** Matplotlib
+- **Tests:** pytest, requests, frontend TypeScript/ESLint checks
 
-- **Aviation Explorer** — Browse and filter airports, airlines, and routes.
-- **Travel Plans** — Create and manage private travel plans with selected routes.
-- **Data Management** — Import and validate aviation datasets from CSV files.
-- **User Management** — JWT authentication and role-based access control.
-- **Data Export** — Export travel plans as JSON or PNG visualisations.
+```text
+backend/airroute/   Flask application, API resources, services and models
+backend/tests/      Isolated unit and HTTP regression tests
+frontend/src/       React application and API client
+docs/               Project and API documentation
+```
 
-## Tech Stack
+## Local setup
 
-- **Backend:** Python, Flask-RESTX
-- **Database:** SQLite, SQLAlchemy
-- **Authentication:** JWT
-- **Visualisation:** Matplotlib
-- **Testing:** Pytest, Requests
-
-## Data Source
-
-AirRoute currently uses imported aviation datasets rather than live airline services.
-
-The application is designed to support future integration with external aviation data providers. Live flight schedules, ticket prices, and bookings are not currently supported.
-
-## Documentation
-
-- [Project Documentation](docs/PROJECT.md)
-- [API Reference](docs/API.md)
-
-## Getting Started
-
-Create a Python 3.13 environment and install the project:
+Prerequisite: Python 3.13 and Node.js/npm.
 
 ```bash
 python3.13 -m venv .venv
 .venv/bin/python -m pip install -e ".[dev]"
+cd frontend
+npm install
 ```
 
-Start the modular backend from the project root:
+Start the backend from the project root:
 
 ```bash
 PYTHONPATH=. .venv/bin/python backend/run.py
 ```
 
-The server listens on `http://127.0.0.1:5000` and exposes Swagger UI at `/`.
+The API and Swagger UI are available at <http://127.0.0.1:5000/>.
 
-## Code quality
-
-The repository includes shared formatting and linting configuration:
-
-- **Prettier** — formats JavaScript, TypeScript, JSON, and other supported frontend files.
-- **Black** — formats Python files in VS Code on save.
-- **Ruff** — runs Python lint checks and import sorting from the command line.
-- **VS Code** — the workspace settings enable format-on-save for Black and Prettier.
-
-Install the corresponding tools in the project environment before using them:
+In a second terminal, start the frontend:
 
 ```bash
-python -m pip install ".[dev]"
+cd frontend
+npm run dev
 ```
 
-Run them from the project root:
+The web UI is available at <http://127.0.0.1:5173/> and proxies `/api` to the
+backend.
 
-```bash
-ruff format .
-ruff check .
-```
+The development database is created at `instance/assignment2.db`. The startup
+helper creates `admin`/`admin` and `user`/`user` accounts when no accounts
+exist. These credentials are for local development only: change them or use
+environment-specific credentials before sharing a running instance, and set a
+strong `JWT_SECRET_KEY`.
 
-Run the complete isolated suite:
+## Importing CSV data
+
+Sign in as an Admin, open **Data Import**, and select one or more supported
+`airports.csv`, `airlines.csv` and `routes.csv` files. Each selected dataset
+replaces its existing records; unselected datasets remain unchanged. Imports
+are validated and atomic, and routes referenced by a travel plan cannot be
+removed or modified.
+
+## Verification
+
+From the project root:
 
 ```bash
 PYTHONPATH=. .venv/bin/python -m pytest -q
 ```
 
-The adapters under `backend/tests/` preserve the original coursework
-assertions while targeting the standalone modular application, temporary
-SQLite databases, and an isolated HTTP server on port `5055`. Run HTTP
-tests sequentially to avoid competing for that port.
+Frontend checks:
+
+```bash
+cd frontend
+npm run lint
+npm run typecheck
+npm run build
+npm run test:auth
+```
+
+## Limitations
+
+The application uses imported demonstration data rather than live schedules.
+It does not provide fares, booking, payments or a public deployment. No
+screenshots or hosted demo are included in this repository.
+
+See [docs/PROJECT.md](docs/PROJECT.md) for architecture and [docs/API.md](docs/API.md)
+for the concise endpoint index. Swagger remains the detailed API source of truth.

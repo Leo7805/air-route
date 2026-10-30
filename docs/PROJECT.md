@@ -2,7 +2,7 @@
 
 > **Product:** Airline Route Explorer & Travel Planner  
 > **Tagline:** Explore airline networks. Organise your travel plans.  
-> **Status:** REST backend implemented and tested; lightweight React frontend planned.
+> **Status:** Completed local full-stack application with a modular Flask backend and React frontend.
 
 ## 1. Project Goal
 
@@ -20,19 +20,13 @@
 
 | ID | Feature | Priority | Acceptance Criteria | Status |
 | --- | --- | --- | --- | --- |
-| R1 | Authentication & Account Management | Must | JWT login; Admin account management; active-account and role checks; private plans remain private, including after account deletion. | Backend complete |
-| R2 | Aviation Data Import | Must | Admin can import airport, airline and route CSV files; invalid imports roll back; routes referenced by plans cannot be removed or changed. | Backend complete |
-| R3 | Aviation Explorer | Must | Authenticated users can browse, search, filter and inspect airports, airlines and routes, including related records. | Backend complete |
-| R4 | Personal Travel Plans | Must | Users can create, list, view, update and delete their own plans; add/remove existing routes; validate date ranges and ownership. | Backend complete |
-| R5 | Export | Must | Export only the current account's plans as self-contained JSON; display a PNG timeline of up to five nearest future plans; handle empty results. | Backend complete |
-| R6 | API Documentation & Testing | Must | Document operations in Swagger/OpenAPI and verify normal, invalid and unauthorised requests with automated tests. | Backend complete |
-| R7 | Lightweight Web Frontend | Must | React UI supports login, aviation search and basic plan management through real existing API endpoints. | Planned |
-
-**Frontend scope (time-boxed):**
-
-- **P0:** Login, airport/airline/route browsing and search, basic travel-plan CRUD.
-- **P1, if time permits:** Add/remove routes, JSON/PNG export controls, CSV import and Admin account management.
-- **Quality bar:** No mock aviation results, no invented endpoints, and clear labelling of demonstration data.
+| R1 | Authentication & Account Management | Must | JWT login; Admin account management; active-account and role checks; private plans remain private, including after account deletion. | Complete |
+| R2 | Aviation Data Import | Must | Admin can import airport, airline and route CSV files; invalid imports roll back; routes referenced by plans cannot be removed or changed. | Complete |
+| R3 | Aviation Explorer | Must | Authenticated users can browse, search, filter and inspect airports, airlines and routes, including related records. | Complete |
+| R4 | Personal Travel Plans | Must | Users can create, list, view, update and delete their own plans; add/remove existing routes; validate date ranges and ownership. | Complete |
+| R5 | Export | Must | Export only the current account's plans as self-contained JSON; display a PNG timeline of up to five nearest future plans; handle empty results. | Complete |
+| R6 | API Documentation & Testing | Must | Document operations in Swagger/OpenAPI and verify normal, invalid and unauthorised requests with automated tests. | Complete |
+| R7 | Lightweight Web Frontend | Must | React UI supports authentication, exploration, plan management, route selection, exports, imports and Admin account management through real API endpoints. | Complete |
 
 ## 3. Technical Design
 
@@ -40,7 +34,7 @@
 
 | Area | Technology | Status |
 | --- | --- | --- |
-| Frontend | React, TypeScript, Vite, Tailwind CSS | Planned |
+| Frontend | React, TypeScript, Vite, Tailwind CSS | Implemented |
 | Backend / REST | Python, Flask, Flask-RESTX | Implemented |
 | Authentication | JWT (Flask-JWT-Extended), hashed passwords | Implemented |
 | Database | SQLite, SQLAlchemy / Flask-SQLAlchemy | Implemented |
@@ -52,8 +46,8 @@
 
 ```mermaid
 flowchart LR
-    Client["Swagger / HTTP Clients (current)"] --> API["Flask-RESTX API"]
-    UI["React Frontend (planned)"] -. "HTTP + JWT" .-> API
+    Client["Swagger / HTTP Clients"] --> API["Flask-RESTX API"]
+    UI["React Frontend"] -- "HTTP + JWT" --> API
     CSV["CSV Datasets"] --> Import["Import & Validation"]
     API --> Auth["Authentication & Accounts"]
     API --> Explorer["Aviation Explorer"]
@@ -81,7 +75,7 @@ are not runtime dependencies of the modular application.
 | Data Import | CSV parsing, validation and transactional replacement | `backend/airroute/csv_import.py`, `backend/airroute/api/imports.py` |
 | Travel Plans | Ownership, plan CRUD, route associations | `backend/airroute/travel_plans.py`, `backend/airroute/api/travel_plans.py` |
 | Export | JSON and PNG generation | `backend/airroute/exports.py`, `backend/airroute/api/travel_plans.py` |
-| Web UI | Browser-based interaction with the existing API | `frontend/` (planned) |
+| Web UI | Browser-based interaction with the existing API | `frontend/` |
 | Tests | Isolated unit and HTTP regression adapters | `backend/tests/` |
 
 **Documentation rule:** Record major modules and key entry points only. Update this section and the architecture diagram when responsibilities or module relationships change—not whenever a file or function changes.
@@ -144,16 +138,16 @@ erDiagram
 
 ## 4. API Design
 
-See **[API Reference](API.md)** for methods, endpoints, permissions and error handling. Swagger/OpenAPI is the detailed source of truth for request and response schemas.
-
-*`API.md` is to be written during the API documentation step; it is not yet part of this deliverable.*
+See **[API Reference](API.md)** for the concise endpoint index. Swagger/OpenAPI is
+the detailed source of truth for request and response schemas.
 
 ## 5. Testing & Delivery
 
 - **Unit Tests:** Isolated pytest tests for validation, database rules and export boundaries.
-- **API / Integration Tests:** `requests`-based HTTP tests for authentication, imports, exploration, travel plans, exports and failure cases. The latest local Agent verification reported **48/48 unit tests and 143/143 HTTP tests passing** against a temporary SQLite database.
+- **API / Integration Tests:** `requests`-based HTTP tests for authentication, imports, exploration, travel plans, exports and failure cases. The suite uses temporary SQLite databases and currently reports 202 passing tests.
+- **Frontend checks:** ESLint, TypeScript type checking, Vite production build and a headless Chrome authentication workflow.
 - **Manual Acceptance Checks:** Log in; browse an airport, airline and route; create a plan; add a route; export JSON/PNG; confirm cross-account privacy; verify PNG display.
-- **How to Run (current backend):**
+- **How to Run:**
 
   ```bash
   python3.13 -m venv .venv
@@ -166,6 +160,6 @@ See **[API Reference](API.md)** for methods, endpoints, permissions and error ha
   Swagger UI: `http://127.0.0.1:5000/`. The test adapters start the
   application with temporary SQLite databases and an isolated HTTP server.
 
-- **Definition of Done:** Frontend P0 actions work against the actual API; README has reproducible setup instructions and screenshots; the project can be listed as a completed Side Project.
-- **Known Limitations:** Imported demo data only; no live flight schedules, fares or booking; frontend not yet implemented; local runtime is the primary target.
-- **Delivery Rule:** Preserve the original coursework submission. Perform refactoring and frontend work in a separate Side Project branch or copy, keeping existing endpoint behaviour and tests intact.
+- **Definition of Done:** The React frontend covers the existing API operations, documentation has reproducible setup instructions, and automated checks pass against isolated databases.
+- **Known Limitations:** Imported demo data only; no live flight schedules, fares or booking; local runtime is the primary target; no hosted deployment or screenshots are included.
+- **Delivery Rule:** Preserve existing endpoint behaviour and tests while keeping the modular application lightweight.

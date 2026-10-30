@@ -52,11 +52,21 @@ export function AppLayout() {
           )}
         </nav>
         <div className="account-menu">
-          <div className="account-copy">
-            <span>{account?.username}</span>
-            <small>{account?.role}</small>
+          <div className="account-profile">
+            <span className="account-avatar" aria-hidden="true">
+              {account?.username?.slice(0, 1).toUpperCase()}
+            </span>
+            <div className="account-copy">
+              <strong>{account?.username}</strong>
+              <small>{account?.role}</small>
+            </div>
           </div>
-          <button className="button button-quiet" onClick={logout} type="button">
+          <button
+            aria-label="Log out"
+            className="button button-quiet logout-button"
+            onClick={logout}
+            type="button"
+          >
             Log out
           </button>
         </div>

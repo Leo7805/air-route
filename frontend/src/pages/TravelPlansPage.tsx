@@ -277,7 +277,11 @@ export function TravelPlansPage() {
         </section>
         <section className="panel plan-editor">
           <div className="panel-heading"><div><span className="eyebrow">{selectedPlan && !isEditing ? "Plan details" : "Plan form"}</span><h2>{selectedPlan && !isEditing ? selectedPlan.name : isEditing ? "Edit travel plan" : "Create travel plan"}</h2></div></div>
-          {selectedPlan && !isEditing ? <PlanDetails plan={selectedPlan} onEdit={() => setIsEditing(true)} onDelete={() => void deletePlan()} isSubmitting={isSubmitting} onRemoveRoute={(id) => void removeRoute(id)} token={token} /> :
+          {selectedPlan && !isEditing ? <><PlanDetails plan={selectedPlan} onEdit={() => setIsEditing(true)} onDelete={() => void deletePlan()} isSubmitting={isSubmitting} onRemoveRoute={(id) => void removeRoute(id)} token={token} /><div className="route-manager">
+            <div className="route-manager-heading"><div><span className="eyebrow">Add routes</span><h3>Choose a route</h3></div><button className="button button-primary" disabled={isSubmitting} onClick={() => navigate("/explorer", { state: { section: "routes", planId: selectedPlan.plan_id } })} type="button">Browse Routes</button></div>
+            <form className="route-lookup" onSubmit={findRoute}><label>Route ID<input inputMode="numeric" onChange={(event) => setRouteId(event.target.value)} placeholder="e.g. 1" value={routeId} /></label><button className="button button-quiet" disabled={isRouteLoading || isSubmitting} type="submit">{isRouteLoading ? "Finding…" : "Find route"}</button></form>
+            {route && <div className="route-preview"><div><strong>Route {route.route_id}</strong><span>{routeLabel(route)} · {route.airline?.name ?? route.airline_iata ?? "Unknown airline"}</span></div><button className="button button-primary" disabled={isSubmitting || selectedPlan.routes.includes(route.route_id)} onClick={() => void addRoute()} type="button">{selectedPlan.routes.includes(route.route_id) ? "Already added" : "Add route"}</button></div>}
+          </div></> :
             <form className="plan-form" onSubmit={submitPlan}>
               <label>Plan name<input maxLength={255} onChange={(event) => setFields({ ...fields, name: event.target.value })} required value={fields.name} /></label>
               <label>Departure date<input onChange={(event) => setFields({ ...fields, departure_date: event.target.value })} required type="date" value={fields.departure_date} /></label>
@@ -286,20 +290,6 @@ export function TravelPlansPage() {
             </form>}
         </section>
       </div>
-      {selectedPlan && !isEditing && <section className="panel route-manager">
-        <div className="panel-heading"><div><span className="eyebrow">Route associations</span><h2>Add an existing route</h2></div></div>
-        <p className="muted route-manager-help">Browse the imported route network to choose a route instead of entering an ID.</p>
-        <button
-          className="button button-primary"
-          disabled={isSubmitting}
-          onClick={() => navigate("/explorer", { state: { section: "routes", planId: selectedPlan.plan_id } })}
-          type="button"
-        >
-          Browse Routes
-        </button>
-        <form className="route-lookup" onSubmit={findRoute}><label>Route ID<input inputMode="numeric" onChange={(event) => setRouteId(event.target.value)} placeholder="e.g. 1" value={routeId} /></label><button className="button button-quiet" disabled={isRouteLoading || isSubmitting} type="submit">{isRouteLoading ? "Finding…" : "Find route"}</button></form>
-        {route && <div className="route-preview"><div><strong>Route {route.route_id}</strong><span>{routeLabel(route)} · {route.airline?.name ?? route.airline_iata ?? "Unknown airline"}</span></div><button className="button button-primary" disabled={isSubmitting || selectedPlan.routes.includes(route.route_id)} onClick={() => void addRoute()} type="button">{selectedPlan.routes.includes(route.route_id) ? "Already added" : "Add route"}</button></div>}
-      </section>}
     </section>
   );
 }
@@ -313,15 +303,23 @@ function PlanDetails({ plan, onEdit, onDelete, isSubmitting, onRemoveRoute, toke
   token: string | null;
 }) {
   const [routes, setRoutes] = useState<RouteDetails[]>([]);
+  const [routeError, setRouteError] = useState("");
   useEffect(() => {
     let active = true;
     if (!token || plan.routes.length === 0) {
       setRoutes([]);
+      setRouteError("");
       return;
     }
+    setRouteError("");
     Promise.all(plan.routes.map((routeId) => api.route(token, routeId)))
       .then((items) => { if (active) setRoutes(items); })
-      .catch(() => { if (active) setRoutes([]); });
+      .catch(() => {
+        if (active) {
+          setRoutes([]);
+          setRouteError("Unable to load route details.");
+        }
+      });
     return () => { active = false; };
   }, [plan, token]);
 
@@ -329,6 +327,6 @@ function PlanDetails({ plan, onEdit, onDelete, isSubmitting, onRemoveRoute, toke
     <dl className="detail-list"><dt>Departure</dt><dd>{plan.departure_date}</dd><dt>Return</dt><dd>{plan.return_date}</dd><dt>Routes</dt><dd>{plan.routes.length}</dd></dl>
     <div className="form-actions"><button className="button button-primary" disabled={isSubmitting} onClick={onEdit} type="button">Edit plan</button><button className="button button-danger" disabled={isSubmitting} onClick={onDelete} type="button">Delete plan</button></div>
     <h3>Associated routes</h3>
-    {plan.routes.length === 0 ? <p className="table-state">No routes associated yet.</p> : routes.length === 0 ? <p className="table-state">Loading route details…</p> : <div className="associated-routes">{routes.map((route) => <div className="associated-route" key={route.route_id}><div><strong>{routeLabel(route)}</strong><span>{route.airline?.name ?? route.airline_iata ?? "Unknown airline"} · Route {route.route_id}</span></div><button className="text-button text-button-danger" disabled={isSubmitting} onClick={() => onRemoveRoute(route.route_id)} type="button">Remove</button></div>)}</div>}
+    {plan.routes.length === 0 ? <p className="table-state">No routes associated yet.</p> : routeError ? <p className="feedback feedback-error" role="alert">{routeError}</p> : routes.length === 0 ? <p className="table-state">Loading route details…</p> : <div className="associated-routes">{routes.map((route) => <div className="associated-route" key={route.route_id}><div><strong>{routeLabel(route)}</strong><span>{route.airline?.name ?? route.airline_iata ?? "Unknown airline"} · Route {route.route_id}</span></div><button className="text-button text-button-danger" disabled={isSubmitting} onClick={() => onRemoveRoute(route.route_id)} type="button">Remove</button></div>)}</div>}
   </div>;
 }
