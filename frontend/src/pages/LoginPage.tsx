@@ -1,6 +1,8 @@
 import { FormEvent, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 
+import { Brand } from "../components/Brand";
+
 import { useAuth } from "../auth/AuthContext";
 import { ApiError } from "../lib/api";
 
@@ -54,7 +56,7 @@ export function LoginPage() {
       </section>
       <section className="auth-panel">
         <div className="auth-card">
-          <span className="brand-mark">AR</span>
+          <Brand />
           <span className="eyebrow">Welcome back</span>
           <h2>Sign in to AirRoute</h2>
           <p className="muted">Use your existing AirRoute account.</p>

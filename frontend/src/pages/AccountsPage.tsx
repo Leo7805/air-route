@@ -120,8 +120,7 @@ export function AccountsPage() {
     <section className="accounts-page">
       <div className="page-heading">
         <div>
-          <span className="eyebrow">Account Management</span>
-          <h1>Manage account access.</h1>
+          <h1>Accounts</h1>
           <p>Only User accounts can be created, changed, or deleted.</p>
         </div>
         <div className="page-actions">

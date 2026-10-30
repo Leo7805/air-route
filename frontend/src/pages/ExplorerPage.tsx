@@ -3,6 +3,9 @@ import type { FormEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../auth/AuthContext";
+import { ExplorerDetails } from "../components/ExplorerDetails";
+import { AddRouteDialog } from "../components/AddRouteDialog";
+import { Icon } from "../components/Icon";
 import { ApiError, api } from "../lib/api";
 import type {
   Airline,
@@ -58,6 +61,7 @@ export function ExplorerPage() {
   const [routeActionMessage, setRouteActionMessage] = useState("");
   const requestId = useRef(0);
   const detailRequestId = useRef(0);
+  const detailTrigger = useRef<HTMLElement | null>(null);
 
   const loadResults = useCallback(async () => {
     if (!token) return;
@@ -142,6 +146,7 @@ export function ExplorerPage() {
     if (!token) return;
     const currentRequest = ++detailRequestId.current;
     const controller = new AbortController();
+    detailTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setSelected(item);
     setDetail(null);
     setDetailError("");
@@ -231,19 +236,22 @@ export function ExplorerPage() {
   return (
     <section className="explorer-page">
       <div className="page-heading explorer-heading">
-        <div>
-          <span className="eyebrow">Aviation Explorer</span>
-          <h1>Explore the route network.</h1>
-          <p>Search imported aviation records by airport, airline, or route.</p>
-        </div>
+        <h1>Aviation Explorer</h1>
+        <p className="data-notice"><Icon name="info" />Imported demo data · Not live schedules</p>
       </div>
-      <p className="data-notice">
-        Aviation information is imported demonstration data, not live flight schedules.
-      </p>
       <div className="explorer-tabs" role="tablist" aria-label="Aviation data">
         {(["airports", "airlines", "routes"] as Section[]).map((item) => (
           <button
             aria-selected={section === item}
+            aria-controls="explorer-panel"
+            id={`explorer-tab-${item}`}
+            tabIndex={section === item ? 0 : -1}
+            onKeyDown={(event) => {
+              const tabs: Section[] = ["airports", "airlines", "routes"];
+              const index = tabs.indexOf(item);
+              const next = event.key === "ArrowRight" ? tabs[(index + 1) % 3] : event.key === "ArrowLeft" ? tabs[(index + 2) % 3] : event.key === "Home" ? tabs[0] : event.key === "End" ? tabs[2] : null;
+              if (next) { event.preventDefault(); setSection(next); document.getElementById(`explorer-tab-${next}`)?.focus(); }
+            }}
             className={section === item ? "explorer-tab explorer-tab-active" : "explorer-tab"}
             key={item}
             onClick={() => setSection(item)}
@@ -279,11 +287,12 @@ export function ExplorerPage() {
           </>
         )}
         <button className="button button-primary" type="submit">Search</button>
+        <button className="button button-quiet" onClick={() => { setQuery(""); setAirportFilter(""); setAirlineFilter(""); setOriginFilter(""); setDestinationFilter(""); setPage(0); }} type="button">Clear</button>
       </form>
-      <div className="explorer-layout">
+      <div aria-labelledby={`explorer-tab-${section}`} className="explorer-layout" id="explorer-panel" role="tabpanel">
         <section className="panel explorer-results">
           <div className="panel-heading">
-            <div><span className="eyebrow">{section}</span><h2>{result ? `${result.total} records` : "Records"}</h2></div>
+            <div><h2 className="section-title">{section}</h2><span className="count-label">{result ? `${result.total} imported records` : "Imported records"}</span></div><span className="count-label">Select a row for details</span>
           </div>
           {isLoading ? <p className="table-state">Loading records…</p> :
             error ? <p className="feedback feedback-error" role="alert">{error}</p> :
@@ -297,32 +306,22 @@ export function ExplorerPage() {
           {result && result.total > 0 && (
             <div className="pagination">
               <button className="button button-quiet" disabled={!canPrevious || isLoading} onClick={() => setPage((current) => current - 1)} type="button">Previous</button>
-              <span>Page {page + 1} of {totalPages}</span>
+              <span className="page-number">{page + 1} / {totalPages}</span>
               <button className="button button-quiet" disabled={!canNext || isLoading} onClick={() => setPage((current) => current + 1)} type="button">Next</button>
             </div>
           )}
         </section>
-        <DetailPanel
-          detail={detail}
-          error={detailError}
-          isAddingRoute={isAddingRoute}
-          isLoading={isDetailLoading}
-          isPlansLoading={isPlansLoading}
-          onAddRoute={() => {
-            if (selected && "route_id" in selected) void beginAddRoute(selected);
-          }}
-          onCancelAdd={() => {
-            setPendingRoute(null);
-            setRouteActionMessage("");
-          }}
-          onConfirmAdd={() => void addRouteToPlan()}
-          pendingRoute={pendingRoute}
-          plans={plans}
-          routeActionMessage={routeActionMessage}
-          selected={selected}
-          targetPlanId={targetPlanId}
-          onTargetPlanChange={setTargetPlanId}
-        />
+        {selected && <ExplorerDetails
+          detail={detail} error={detailError} isLoading={isDetailLoading}
+          title={section === "routes" ? "Route details" : section === "airports" ? "Airport details" : "Airline details"}
+          trigger={detailTrigger.current} modalOpen={pendingRoute !== null}
+          onClose={() => { ++detailRequestId.current; setSelected(null); setDetail(null); }}
+          onAddRoute={"route_id" in selected ? () => void beginAddRoute(selected) : undefined}
+        />}
+        {pendingRoute && <AddRouteDialog route={pendingRoute} plans={plans} isLoading={isPlansLoading}
+          isAdding={isAddingRoute} message={routeActionMessage} targetPlanId={targetPlanId}
+          onTargetPlanChange={setTargetPlanId} onConfirm={() => void addRouteToPlan()}
+          onClose={() => { setPendingRoute(null); setRouteActionMessage(""); }} />}
       </div>
     </section>
   );
@@ -342,113 +341,13 @@ function ExplorerTable({ section, items, onAddRoute, onSelect }: {
             <>            <th>ID</th><th>Airline</th><th>Departure</th><th>Arrival</th><th>Stops</th><th>Action</th></>}</tr></thead>
         <tbody>{items.map((item) => {
           const label = section === "airports" ? (item as Airport).name : section === "airlines" ? (item as Airline).name : `Route ${(item as RouteSummary).route_id}`;
-          return <tr className="clickable-row" key={section === "airports" ? (item as Airport).airport_id : section === "airlines" ? (item as Airline).airline_id : (item as RouteSummary).route_id} onClick={() => onSelect(item)} tabIndex={0} onKeyDown={(event) => { if (event.key === "Enter") onSelect(item); }}>
+          return <tr className="clickable-row" key={section === "airports" ? (item as Airport).airport_id : section === "airlines" ? (item as Airline).airline_id : (item as RouteSummary).route_id} onClick={() => onSelect(item)} tabIndex={0} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); onSelect(item); } }}>
             {section === "airports" ? <><td>{(item as Airport).airport_id}</td><td className="account-name">{label}</td><td>{value((item as Airport).city)}</td><td>{value((item as Airport).country)}</td><td>{value((item as Airport).iata_code)}</td></> :
               section === "airlines" ? <><td>{(item as Airline).airline_id}</td><td className="account-name">{label}</td><td>{value((item as Airline).country)}</td><td>{value((item as Airline).iata_code)}</td><td>{value((item as Airline).icao_code)}</td></> :
-                <><td>{(item as RouteSummary).route_id}</td><td>{value((item as RouteSummary).airline_iata)} ({(item as RouteSummary).airline_id})</td><td>{value((item as RouteSummary).origin_iata)} ({(item as RouteSummary).origin_airport_id})</td><td>{value((item as RouteSummary).destination_iata)} ({(item as RouteSummary).destination_airport_id})</td><td>{(item as RouteSummary).stops}</td><td><button className="text-button" onClick={(event) => { event.stopPropagation(); onAddRoute(item as RouteSummary); }} type="button">Add to Plan</button></td></>}
+                <><td>{(item as RouteSummary).route_id}</td><td>{value((item as RouteSummary).airline_iata)} ({(item as RouteSummary).airline_id})</td><td>{value((item as RouteSummary).origin_iata)} ({(item as RouteSummary).origin_airport_id})</td><td>{value((item as RouteSummary).destination_iata)} ({(item as RouteSummary).destination_airport_id})</td><td>{(item as RouteSummary).stops}</td><td><button className="button button-tint" onClick={(event) => { event.stopPropagation(); onAddRoute(item as RouteSummary); }} type="button">+ Add to Plan</button></td></>}
           </tr>;
         })}</tbody>
       </table>
     </div>
   );
-}
-
-function DetailPanel({
-  detail,
-  error,
-  isAddingRoute,
-  isLoading,
-  isPlansLoading,
-  onAddRoute,
-  onCancelAdd,
-  onConfirmAdd,
-  pendingRoute,
-  plans,
-  routeActionMessage,
-  selected,
-  targetPlanId,
-  onTargetPlanChange,
-}: {
-  detail: Airport | Airline | RouteDetails | null;
-  error: string;
-  isAddingRoute: boolean;
-  isLoading: boolean;
-  isPlansLoading: boolean;
-  onAddRoute: () => void;
-  onCancelAdd: () => void;
-  onConfirmAdd: () => void;
-  pendingRoute: RouteSummary | null;
-  plans: TravelPlan[];
-  routeActionMessage: string;
-  selected: RecordItem | null;
-  targetPlanId: number | null;
-  onTargetPlanChange: (planId: number) => void;
-}) {
-  return (
-    <aside className="panel detail-panel">
-      <span className="eyebrow">Details</span>
-      {!selected ? <p className="table-state">Select a record to view details.</p> :
-        isLoading ? <p className="table-state">Loading details…</p> :
-          error ? <p className="feedback feedback-error" role="alert">{error}</p> :
-            detail ? <DetailContent detail={detail} /> : null}
-      {detail && "route_id" in detail && !pendingRoute && (
-        <button className="button button-primary button-wide route-add-button" onClick={onAddRoute} type="button">
-          Add to Plan
-        </button>
-      )}
-      {pendingRoute && (
-        <div className="route-picker">
-          <span className="eyebrow">Add route to plan</span>
-          <p className="route-picker-summary">
-            Route {pendingRoute.route_id}: {value(pendingRoute.origin_iata)} → {value(pendingRoute.destination_iata)}
-          </p>
-          {isPlansLoading ? <p className="table-state">Loading your plans…</p> :
-            plans.length === 0 ? <p className="feedback feedback-error">{routeActionMessage}</p> :
-              <>
-                <label>
-                  Travel plan
-                  <select
-                    disabled={isAddingRoute}
-                    onChange={(event) => onTargetPlanChange(Number(event.target.value))}
-                    value={targetPlanId ?? ""}
-                  >
-                    {plans.map((plan) => (
-                      <option key={plan.plan_id} value={plan.plan_id}>
-                        {plan.name}{plan.routes.includes(pendingRoute.route_id) ? " (already added)" : ""}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                {routeActionMessage && <p className="feedback feedback-error">{routeActionMessage}</p>}
-                <div className="form-actions">
-                  <button
-                    className="button button-primary"
-                    disabled={isAddingRoute || targetPlanId === null || plans.find((plan) => plan.plan_id === targetPlanId)?.routes.includes(pendingRoute.route_id) === true}
-                    onClick={onConfirmAdd}
-                    type="button"
-                  >
-                    {isAddingRoute ? "Adding…" : "Add route"}
-                  </button>
-                  <button className="button button-quiet" disabled={isAddingRoute} onClick={onCancelAdd} type="button">Cancel</button>
-                </div>
-              </>}
-        </div>
-      )}
-    </aside>
-  );
-}
-
-function DetailContent({ detail }: { detail: Airport | Airline | RouteDetails }) {
-  if ("route_id" in detail) {
-    return <><h2>Route {detail.route_id}</h2><dl className="detail-list">
-      <dt>Airline</dt><dd>{detail.airline?.name ?? value(detail.airline_iata)} ({detail.airline_id})</dd>
-      <dt>Departure</dt><dd>{detail.origin_airport?.name ?? value(detail.origin_iata)} ({detail.origin_airport_id})</dd>
-      <dt>Arrival</dt><dd>{detail.destination_airport?.name ?? value(detail.destination_iata)} ({detail.destination_airport_id})</dd>
-      <dt>Stops</dt><dd>{detail.stops}</dd><dt>Codeshare</dt><dd>{value(detail.codeshare)}</dd><dt>Equipment</dt><dd>{value(detail.equipment)}</dd>
-    </dl></>;
-  }
-  if ("airport_id" in detail) {
-    return <><h2>{detail.name}</h2><dl className="detail-list"><dt>ID</dt><dd>{detail.airport_id}</dd><dt>City</dt><dd>{value(detail.city)}</dd><dt>Country</dt><dd>{value(detail.country)}</dd><dt>IATA / ICAO</dt><dd>{value(detail.iata_code)} / {value(detail.icao_code)}</dd><dt>Coordinates</dt><dd>{value(detail.latitude)}, {value(detail.longitude)}</dd><dt>Altitude</dt><dd>{value(detail.altitude)}</dd><dt>Timezone</dt><dd>{value(detail.timezone)}</dd></dl></>;
-  }
-  return <><h2>{detail.name}</h2><dl className="detail-list"><dt>ID</dt><dd>{detail.airline_id}</dd><dt>Country</dt><dd>{value(detail.country)}</dd><dt>IATA / ICAO</dt><dd>{value(detail.iata_code)} / {value(detail.icao_code)}</dd></dl></>;
 }

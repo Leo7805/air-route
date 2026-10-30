@@ -103,8 +103,7 @@ export function ImportPage() {
     <section className="import-page">
       <div className="page-heading">
         <div>
-          <span className="eyebrow">Data Import</span>
-          <h1>Refresh aviation data.</h1>
+          <h1>Data Import</h1>
           <p>Upload one or more validated CSV datasets for the Explorer.</p>
         </div>
       </div>

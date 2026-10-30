@@ -236,12 +236,11 @@ export function TravelPlansPage() {
     <section className="plans-page">
       <div className="page-heading">
         <div>
-          <span className="eyebrow">Travel Plans</span>
-          <h1>Keep your routes together.</h1>
-          <p>Private plans belong only to the currently signed-in account.</p>
+          <h1>Travel Plans</h1>
         </div>
         <button className="button button-quiet" disabled={isLoading || isSubmitting} onClick={() => void loadPlans()} type="button">Refresh</button>
         <div className="export-actions">
+          <button className="button button-primary" onClick={() => navigate("/explorer", { state: { section: "routes", ...(selectedId !== null ? { planId: selectedId } : {}) } })} type="button">+ Browse Routes</button>
           <button
             className="button button-quiet"
             disabled={exporting !== null}
@@ -263,7 +262,7 @@ export function TravelPlansPage() {
       {feedback && <p className={`feedback feedback-${feedback.type}`} role="status">{feedback.message}</p>}
       <div className="plans-layout">
         <section className="panel plans-list">
-          <div className="panel-heading"><div><span className="eyebrow">Your plans</span><h2>{plans.length} {plans.length === 1 ? "plan" : "plans"}</h2></div></div>
+          <div className="panel-heading"><div><h2>My plans</h2><span className="count-label">{plans.length} {plans.length === 1 ? "plan" : "plans"}</span></div></div>
           {isLoading ? <p className="table-state">Loading travel plans…</p> :
             plans.length === 0 ? <p className="table-state">No travel plans yet.</p> :
               <div className="plan-list">{plans.map((plan) => (

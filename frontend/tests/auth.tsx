@@ -7,6 +7,9 @@ import { AppLayout } from "../src/components/AppLayout";
 import { AdminRoute } from "../src/components/AdminRoute";
 import { ProtectedRoute } from "../src/components/ProtectedRoute";
 import { LoginPage } from "../src/pages/LoginPage";
+import { ExplorerDetails } from "../src/components/ExplorerDetails";
+import { AddRouteDialog } from "../src/components/AddRouteDialog";
+import type { RouteDetails, TravelPlan } from "../src/types/api";
 import type { Account } from "../src/types/api";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -88,6 +91,9 @@ const tests: Array<[string, () => Promise<void>]> = [
       await login(name);
       identity(name);
       assert(host.textContent?.includes("Accounts") === (name === "admin"), "Wrong admin navigation");
+      assert(host.textContent?.includes(name === "admin" ? "Administrator" : "User account"), "Wrong account description");
+      assert(host.querySelector(".account-avatar svg"), "Account identity has no SVG icon");
+      assert(Boolean(host.querySelector(".account-admin")) === (name === "admin"), "Role icon styling did not update");
       await logout();
       signedOut();
     }
@@ -201,6 +207,61 @@ const tests: Array<[string, () => Promise<void>]> = [
     assert(host.textContent?.includes("Explorer"), "User not redirected");
   }],
 ];
+
+const routeFixture: RouteDetails = {
+  route_id: 101, airline_id: 1, airline_iata: "QF", origin_airport_id: 1,
+  origin_iata: "SYD", destination_airport_id: 2, destination_iata: "MEL",
+  stops: 0, codeshare: null, equipment: "737", links: { self: "/routes/101" },
+  airline: null, origin_airport: null, destination_airport: null,
+};
+const planFixture: TravelPlan = { plan_id: 1, name: "Test plan", departure_date: "2028-01-01", return_date: "2028-01-02", routes: [] };
+
+tests.push(
+  ["Details stays non-modal, updates records, handles Escape and restores focus", async () => {
+    await mount();
+    const trigger = document.createElement("button");
+    document.body.append(trigger);
+    trigger.focus();
+    let closed = 0;
+    const props = { detail: routeFixture, error: "", isLoading: false, title: "Route details", trigger, modalOpen: false, onClose: () => { closed++; } };
+    try {
+      await act(async () => root.render(<ExplorerDetails {...props} />));
+      assert(document.activeElement?.getAttribute("aria-label") === "Close details", "Drawer did not receive keyboard focus");
+      assert(!document.querySelector(":modal"), "Drawer blocks the background");
+      assert(document.body.style.overflow !== "hidden", "Drawer locked document scrolling");
+      await act(async () => root.render(<ExplorerDetails {...props} detail={{ ...routeFixture, destination_iata: "BNE" }} modalOpen />));
+      assert(host.textContent?.includes("SYD → BNE"), "Selected record did not update");
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+      assert(closed === 0, "Escape leaked through the form dialog");
+      await act(async () => root.render(<ExplorerDetails {...props} />));
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+      assert(Number(closed) === 1, "Escape did not close details");
+      await act(async () => root.render(null));
+      assert(document.activeElement === trigger, "Drawer did not restore focus");
+    } finally { trigger.remove(); }
+  }],
+  ["Add to Plan is modal, submits the selected plan and prevents duplicates", async () => {
+    await mount();
+    const trigger = document.createElement("button");
+    document.body.append(trigger);
+    trigger.focus();
+    let confirmed = 0;
+    const props = { route: routeFixture, plans: [planFixture], isLoading: false, isAdding: false, message: "", targetPlanId: 1, onTargetPlanChange: () => {}, onConfirm: () => { confirmed++; }, onClose: () => {} };
+    await act(async () => root.render(<AddRouteDialog {...props} />));
+    assert(host.querySelector("dialog")?.matches(":modal"), "Add to Plan has no modal backdrop");
+    const submit = host.querySelector<HTMLButtonElement>('button[type="submit"]');
+    assert(submit && !submit.disabled, "Available route could not be added");
+    await act(async () => submit.click());
+    assert(confirmed === 1, "Add Route did not invoke the existing action");
+    await act(async () => root.render(<AddRouteDialog {...props} plans={[{ ...planFixture, routes: [routeFixture.route_id] }]} />));
+    assert(submit.disabled, "Duplicate route action is enabled");
+    await act(async () => root.render(<AddRouteDialog {...props} isLoading />));
+    assert(submit.disabled, "Submission is enabled while plans load");
+    await act(async () => root.render(null));
+    assert(document.activeElement === trigger, "Modal did not restore focus");
+    trigger.remove();
+  }],
+);
 
 const results: string[] = [];
 for (const [name, run] of tests) {
