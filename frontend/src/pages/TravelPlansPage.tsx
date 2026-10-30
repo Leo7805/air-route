@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../auth/AuthContext";
 import { ApiError, api } from "../lib/api";
 import type { RouteDetails, TravelPlan } from "../types/api";
 
 type PlanFields = Pick<TravelPlan, "name" | "departure_date" | "return_date">;
+type TravelPlansNavigationState = { planId?: number };
 
 const emptyFields: PlanFields = {
   name: "",
@@ -25,6 +27,9 @@ function routeLabel(route: RouteDetails) {
 
 export function TravelPlansPage() {
   const { token } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const requestedPlanId = (location.state as TravelPlansNavigationState | null)?.planId;
   const [plans, setPlans] = useState<TravelPlan[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<TravelPlan | null>(null);
@@ -35,6 +40,7 @@ export function TravelPlansPage() {
   const [routeId, setRouteId] = useState("");
   const [route, setRoute] = useState<RouteDetails | null>(null);
   const [isRouteLoading, setIsRouteLoading] = useState(false);
+  const [exporting, setExporting] = useState<"json" | "image" | null>(null);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const listRequest = useRef(0);
 
@@ -47,7 +53,9 @@ export function TravelPlansPage() {
       if (request !== listRequest.current) return;
       setPlans(response.items);
       setSelectedId((current) =>
-        current && response.items.some((plan) => plan.plan_id === current)
+        requestedPlanId && response.items.some((plan) => plan.plan_id === requestedPlanId)
+          ? requestedPlanId
+          : current && response.items.some((plan) => plan.plan_id === current)
           ? current
           : response.items[0]?.plan_id ?? null,
       );
@@ -59,7 +67,7 @@ export function TravelPlansPage() {
     } finally {
       if (request === listRequest.current) setIsLoading(false);
     }
-  }, [token]);
+  }, [requestedPlanId, token]);
 
   useEffect(() => {
     setPlans([]);
@@ -188,6 +196,40 @@ export function TravelPlansPage() {
     } finally {
       setIsSubmitting(false);
     }
+
+  }
+
+  async function exportPlans(format: "json" | "image") {
+    if (!token) return;
+    setFeedback(null);
+    setExporting(format);
+    try {
+      const { blob, filename } = await api.exportTravelPlans(token, format);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setFeedback({
+        type: "success",
+        message: `${format === "json" ? "JSON" : "PNG"} export downloaded.`,
+      });
+    } catch (reason) {
+      setFeedback({
+        type: "error",
+        message: messageFor(
+          reason,
+          format === "image"
+            ? "Unable to export PNG. Create a future travel plan first."
+            : "Unable to export travel plans.",
+        ),
+      });
+    } finally {
+      setExporting(null);
+    }
   }
 
   return (
@@ -199,6 +241,24 @@ export function TravelPlansPage() {
           <p>Private plans belong only to the currently signed-in account.</p>
         </div>
         <button className="button button-quiet" disabled={isLoading || isSubmitting} onClick={() => void loadPlans()} type="button">Refresh</button>
+        <div className="export-actions">
+          <button
+            className="button button-quiet"
+            disabled={exporting !== null}
+            onClick={() => void exportPlans("json")}
+            type="button"
+          >
+            {exporting === "json" ? "Exporting…" : "Export JSON"}
+          </button>
+          <button
+            className="button button-quiet"
+            disabled={exporting !== null}
+            onClick={() => void exportPlans("image")}
+            type="button"
+          >
+            {exporting === "image" ? "Exporting…" : "Export PNG"}
+          </button>
+        </div>
       </div>
       {feedback && <p className={`feedback feedback-${feedback.type}`} role="status">{feedback.message}</p>}
       <div className="plans-layout">
@@ -228,6 +288,15 @@ export function TravelPlansPage() {
       </div>
       {selectedPlan && !isEditing && <section className="panel route-manager">
         <div className="panel-heading"><div><span className="eyebrow">Route associations</span><h2>Add an existing route</h2></div></div>
+        <p className="muted route-manager-help">Browse the imported route network to choose a route instead of entering an ID.</p>
+        <button
+          className="button button-primary"
+          disabled={isSubmitting}
+          onClick={() => navigate("/explorer", { state: { section: "routes", planId: selectedPlan.plan_id } })}
+          type="button"
+        >
+          Browse Routes
+        </button>
         <form className="route-lookup" onSubmit={findRoute}><label>Route ID<input inputMode="numeric" onChange={(event) => setRouteId(event.target.value)} placeholder="e.g. 1" value={routeId} /></label><button className="button button-quiet" disabled={isRouteLoading || isSubmitting} type="submit">{isRouteLoading ? "Finding…" : "Find route"}</button></form>
         {route && <div className="route-preview"><div><strong>Route {route.route_id}</strong><span>{routeLabel(route)} · {route.airline?.name ?? route.airline_iata ?? "Unknown airline"}</span></div><button className="button button-primary" disabled={isSubmitting || selectedPlan.routes.includes(route.route_id)} onClick={() => void addRoute()} type="button">{selectedPlan.routes.includes(route.route_id) ? "Already added" : "Add route"}</button></div>}
       </section>}

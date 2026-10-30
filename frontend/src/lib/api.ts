@@ -24,6 +24,26 @@ export class ApiError extends Error {
   }
 }
 
+async function responseError(response: Response) {
+  const contentType = response.headers.get("Content-Type") ?? "";
+  let message: string | undefined;
+  if (contentType.includes("application/json")) {
+    const body = await response.text();
+    if (body) {
+      try {
+        const payload = JSON.parse(body) as ApiErrorPayload;
+        message = payload.message;
+      } catch {
+        message = undefined;
+      }
+    }
+  }
+  throw new ApiError(
+    message ?? `Request failed with status ${response.status}`,
+    response.status,
+  );
+}
+
 async function request<T>(
   path: string,
   options: RequestInit = {},
@@ -195,6 +215,24 @@ export const api = {
     await request<void>(`/travel-plans/${planId}/routes/${routeId}`, {
       method: "DELETE",
     }, token);
+  },
+
+  async exportTravelPlans(
+    token: string,
+    format: "json" | "image",
+  ): Promise<{ blob: Blob; filename: string }> {
+    const response = await fetch(
+      `${API_BASE_URL}/travel-plans/export?format=${format}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    if (!response.ok) {
+      await responseError(response);
+    }
+    const contentDisposition = response.headers.get("Content-Disposition") ?? "";
+    const filename =
+      contentDisposition.match(/filename="?([^";]+)"?/i)?.[1] ??
+      (format === "json" ? "travel-plans.json" : "upcoming-travel-plans.png");
+    return { blob: await response.blob(), filename };
   },
 
   importDatasets(

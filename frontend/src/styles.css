@@ -10,7 +10,7 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; }
-button, input { font: inherit; }
+button, input, select { font: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: default; }
 
@@ -56,6 +56,8 @@ form { display: grid; gap: 18px; }
 label { color: #39445b; display: grid; font-size: .83rem; font-weight: 650; gap: 8px; }
 input { background: white; border: 1px solid #dfe3ec; border-radius: 8px; color: #172033; outline: 0; padding: 12px 13px; transition: border .2s, box-shadow .2s; }
 input:focus { border-color: #5774c4; box-shadow: 0 0 0 3px #dce5ff; }
+select { background: white; border: 1px solid #dfe3ec; border-radius: 8px; color: #172033; outline: 0; padding: 12px 13px; }
+select:focus { border-color: #5774c4; box-shadow: 0 0 0 3px #dce5ff; }
 .form-error { background: #fff0f0; border-radius: 8px; color: #a13d3d; font-size: .82rem; margin: 0; padding: 11px 12px; }
 .empty-page { background: white; border: 1px solid #e8ebf2; border-radius: 16px; min-height: 430px; padding: clamp(30px, 7vw, 82px); }
 .empty-page h1 { font-size: clamp(2rem, 4vw, 3.6rem); letter-spacing: -.055em; line-height: 1.05; margin: 18px 0 14px; max-width: 600px; }
@@ -107,10 +109,17 @@ tbody tr:last-child td { border-bottom: 0; }
 .detail-list { display: grid; gap: 12px; grid-template-columns: minmax(90px, .7fr) minmax(0, 1.3fr); margin: 0; }
 .detail-list dt { color: #7b8498; font-size: .75rem; font-weight: 750; text-transform: uppercase; }
 .detail-list dd { color: #39445b; font-size: .86rem; margin: 0; overflow-wrap: anywhere; }
+.route-add-button { margin-top: 24px; }
+.route-picker { border-top: 1px solid #e8ebf2; display: grid; gap: 12px; margin-top: 24px; padding-top: 22px; }
+.route-picker-summary { color: #39445b; font-size: .86rem; margin: 0; }
+.route-manager { display: grid; gap: 16px; }
+.route-manager .panel-heading { margin-bottom: 0; }
+.route-manager-help { margin: -4px 0 0; }
 .clickable-row { cursor: pointer; }
 .clickable-row:hover, .clickable-row:focus { background: #f7f8fb; outline: 0; }
 .pagination { align-items: center; border-top: 1px solid #edf0f5; color: #657087; display: flex; font-size: .8rem; justify-content: center; gap: 18px; margin-top: 18px; padding-top: 18px; }
 .plans-page { display: grid; gap: 24px; }
+.export-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .plans-layout { align-items: start; display: grid; gap: 24px; grid-template-columns: minmax(240px, .75fr) minmax(0, 1.5fr); }
 .plans-list, .plan-editor, .route-manager { min-width: 0; }
 .plan-list { display: grid; gap: 8px; }
@@ -164,6 +173,7 @@ tbody tr:last-child td { border-bottom: 0; }
   .explorer-filters label, .explorer-filters .search-field { min-width: 0; width: 100%; }
   .plans-layout { grid-template-columns: 1fr; }
   .route-lookup { align-items: stretch; flex-direction: column; }
+  .export-actions { width: 100%; }
   .import-file-grid { grid-template-columns: 1fr; }
   .import-actions { align-items: stretch; flex-direction: column; gap: 14px; }
 }
