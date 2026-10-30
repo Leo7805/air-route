@@ -85,7 +85,7 @@ def fixture_path_class():
 
 
 def load_modular_api(tmp_path):
-    database_uri = f"sqlite:///{tmp_path / 'assignment2.db'}"
+    database_uri = f"sqlite:///{tmp_path / 'airroute.db'}"
     app = create_app(
         {
             "TESTING": True,
@@ -116,7 +116,7 @@ def isolated_http_server(tmp_path_factory):
     api_module, app = load_modular_api(tmp_path)
     with app.app_context():
         database_path = Path(api_module.db.engine.url.database)
-    expected_database_path = tmp_path / "assignment2.db"
+    expected_database_path = tmp_path / "airroute.db"
     if database_path != expected_database_path:
         pytest.fail(
             f"HTTP test database is not isolated: {database_path} "

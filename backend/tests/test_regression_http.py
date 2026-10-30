@@ -891,7 +891,7 @@ def test_admin_can_import_all_datasets():
 # Test Helpers
 
 PROJECT_DIR = Path(__file__).resolve().parent
-DB_PATH = PROJECT_DIR / "instance" / "assignment2.db"
+DB_PATH = PROJECT_DIR / "instance" / "airroute.db"
 
 
 def read_csv_rows(dataset):

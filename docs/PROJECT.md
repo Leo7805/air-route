@@ -62,8 +62,8 @@ flowchart LR
 ### 3.3 Modules & Project Structure
 
 The backend uses a lightweight application package under `backend/airroute/`.
-The original coursework files remain unchanged as historical reference and
-are not runtime dependencies of the modular application.
+The application runs directly from this package. Regression adapters and CSV
+fixtures live under `backend/tests/` and use isolated temporary databases.
 
 | Module | Responsibility | Current / Planned Location |
 | --- | --- | --- |
@@ -96,6 +96,8 @@ erDiagram
 
 - **Ownership:** Each travel plan belongs to one account. Only its owner can access or modify it, including when the owner is an Admin.
 - **Many-to-many:** A plan contains multiple routes; a route can appear in multiple plans. `TravelPlanRoute` is the junction table with a composite primary key (`plan_id`, `route_id`).
+- **Local database:** Direct startup uses repository-root `instance/airroute.db`; `DATABASE_URL` can select another database. Existing database files are never automatically renamed or migrated.
+- **Startup safety:** The local entry point enables development account seeding only for an empty account table; production mode requires an explicit JWT secret and never seeds demo accounts.
 - **Integrity:** Plan return date cannot precede departure date. Duplicate route associations are rejected. CSV imports are atomic and protect routes already referenced by travel plans.
 - **Implementation note:** The airline/airport connections shown above are **logical references** validated by application code; the original `Route` model does not declare database foreign keys for those IDs.
 
@@ -144,22 +146,24 @@ the detailed source of truth for request and response schemas.
 ## 5. Testing & Delivery
 
 - **Unit Tests:** Isolated pytest tests for validation, database rules and export boundaries.
-- **API / Integration Tests:** `requests`-based HTTP tests for authentication, imports, exploration, travel plans, exports and failure cases. The suite uses temporary SQLite databases and currently reports 202 passing tests.
+- **API / Integration Tests:** `requests`-based HTTP tests for authentication, imports, exploration, travel plans, exports and failure cases. The suite uses temporary SQLite databases and verifies normal, invalid, ownership and role-based requests.
 - **Frontend checks:** ESLint, TypeScript type checking, Vite production build and a headless Chrome authentication workflow.
 - **Manual Acceptance Checks:** Log in; browse an airport, airline and route; create a plan; add a route; export JSON/PNG; confirm cross-account privacy; verify PNG display.
 - **How to Run:**
 
   ```bash
-  python3.13 -m venv .venv
-  .venv/bin/python -m pip install -e ".[dev]"
-  PYTHONPATH=. .venv/bin/python backend/run.py
-  # In another terminal:
-  PYTHONPATH=. .venv/bin/python -m pytest -q
+  python3 -m venv .venv
+  source .venv/bin/activate
+  pip install -r requirements.txt
+  python3 backend/run.py
+  # In another terminal, activate the same virtual environment:
+  source .venv/bin/activate
+  python3 -m pytest -q
   ```
 
   Swagger UI: `http://127.0.0.1:5000/`. The test adapters start the
   application with temporary SQLite databases and an isolated HTTP server.
 
 - **Definition of Done:** The React frontend covers the existing API operations, documentation has reproducible setup instructions, and automated checks pass against isolated databases.
-- **Known Limitations:** Imported demo data only; no live flight schedules, fares or booking; local runtime is the primary target; no hosted deployment or screenshots are included.
+- **Known Limitations:** Imported demo data only; no live flight schedules, fares or booking; local runtime is the primary target; no hosted deployment is provided. Real application screenshots are included in `docs/screenshots/` and the README.
 - **Delivery Rule:** Preserve existing endpoint behaviour and tests while keeping the modular application lightweight.

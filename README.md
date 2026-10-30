@@ -63,38 +63,74 @@ docs/               Project and API documentation
 
 ## Local setup
 
-Prerequisite: Python 3.13 and Node.js/npm.
+Prerequisites: Python 3.13, Node.js 20.19+ (20.x) or 22.12+ (Vite 7), npm,
+and a shell that supports the activation command below.
+
+From the repository root, create and activate the Python environment:
 
 ```bash
-python3.13 -m venv .venv
-.venv/bin/python -m pip install -e ".[dev]"
-cd frontend
-npm install
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
-Start the backend from the project root:
+`requirements.txt` installs the project and its existing `dev` extra from
+`pyproject.toml`, including the backend tests and quality tools. Editable
+installation is optional; it is not required to run the application. For a
+runtime-only installation without test and quality tools, use `pip install .`
+instead.
+
+Start the local backend from the project root in the activated environment:
 
 ```bash
-PYTHONPATH=. .venv/bin/python backend/run.py
+python3 backend/run.py
 ```
 
 The API and Swagger UI are available at <http://127.0.0.1:5000/>.
+The local entry point binds to loopback with the debugger disabled.
 
 In a second terminal, start the frontend:
 
 ```bash
 cd frontend
+npm install
 npm run dev
 ```
 
 The web UI is available at <http://127.0.0.1:5173/> and proxies `/api` to the
 backend.
 
-The development database is created at `instance/assignment2.db`. The startup
-helper creates `admin`/`admin` and `user`/`user` accounts when no accounts
-exist. These credentials are for local development only: change them or use
-environment-specific credentials before sharing a running instance, and set a
-strong `JWT_SECRET_KEY`.
+### Database and local accounts
+
+Direct startup creates `instance/airroute.db` at the repository root and, only
+when the account table is empty, seeds `admin`/`admin` and `user`/`user` in local
+development mode. These are disposable development accounts, not production
+credentials. Import the CSV demonstration files in `backend/tests/fixtures/`
+through **Data Import** to populate a new database.
+
+Set `DATABASE_URL` to override the database location. Use an absolute SQLite
+URI for an explicit path; relative SQLite URIs resolve beneath Flask's instance
+directory. Direct startup uses the repository-root `instance/` directory.
+
+### Environment and security
+
+- `AIRROUTE_ENV`: `backend/run.py` defaults to `development`; the application
+  factory defaults to `production`. Set `production` explicitly outside local
+  development. Unknown mode names are rejected.
+- `DATABASE_URL`: optional SQLAlchemy database URI; overrides the default.
+- `PORT`: optional local backend port; defaults to `5000`. If changed, configure
+  the frontend proxy for the same port.
+- `JWT_SECRET_KEY`: use a high-entropy secret of at least 32 bytes in production.
+  Non-development, non-test factory creation rejects missing or shorter values.
+  Local development uses a random process-local secret when none is configured,
+  so restarting the backend invalidates existing tokens.
+
+Demo accounts are seeded only in development or explicit test mode; existing
+accounts are never removed by startup. Production must use a separate database,
+not a development database containing default accounts. Configure an explicit
+production `DATABASE_URL`, provision an administrator securely, and keep the
+production JWT secret persistent across restarts. The local Flask server is not
+a production deployment; configuring production mode alone does not make it one.
 
 ## Importing CSV data
 
@@ -109,7 +145,8 @@ removed or modified.
 From the project root:
 
 ```bash
-PYTHONPATH=. .venv/bin/python -m pytest -q
+source .venv/bin/activate
+python3 -m pytest -q
 ```
 
 Frontend checks:

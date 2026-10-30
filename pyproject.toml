@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "air-route"
 version = "0.1.0"
-description = "Airline Route Explorer and Travel Planner"
+description = "AirRoute: Airline Route Explorer and Travel Planner"
 requires-python = ">=3.13,<3.14"
 dependencies = [
   "Flask>=3.0,<4",
