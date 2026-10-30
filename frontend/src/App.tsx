@@ -6,8 +6,8 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AccountsPage } from "./pages/AccountsPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ExplorerPage } from "./pages/ExplorerPage";
+import { ImportPage } from "./pages/ImportPage";
 import { TravelPlansPage } from "./pages/TravelPlansPage";
-import { PlaceholderPage } from "./pages/PlaceholderPage";
 
 export function App() {
   return (
@@ -18,7 +18,7 @@ export function App() {
           <Route element={<ExplorerPage />} path="/explorer" />
           <Route element={<TravelPlansPage />} path="/travel-plans" />
           <Route element={<AdminRoute />}>
-            <Route element={<PlaceholderPage />} path="/imports" />
+            <Route element={<ImportPage />} path="/imports" />
             <Route element={<AccountsPage />} path="/accounts" />
           </Route>
         </Route>

@@ -82,3 +82,13 @@ export interface TravelPlanList {
   total: number;
   items: TravelPlan[];
 }
+
+export interface ImportResponse {
+  message: string;
+  datasets: string[];
+  counts: {
+    airports: number;
+    airlines: number;
+    routes: number;
+  };
+}

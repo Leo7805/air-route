@@ -9,6 +9,7 @@ import type {
   RouteSummary,
   TravelPlan,
   TravelPlanList,
+  ImportResponse,
 } from "../types/api";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
@@ -29,7 +30,11 @@ async function request<T>(
   token?: string,
 ): Promise<T> {
   const headers = new Headers(options.headers);
-  if (options.body && !headers.has("Content-Type")) {
+  if (
+    options.body &&
+    !(options.body instanceof FormData) &&
+    !headers.has("Content-Type")
+  ) {
     headers.set("Content-Type", "application/json");
   }
   if (token) {
@@ -189,6 +194,21 @@ export const api = {
   ): Promise<void> {
     await request<void>(`/travel-plans/${planId}/routes/${routeId}`, {
       method: "DELETE",
+    }, token);
+  },
+
+  importDatasets(
+    token: string,
+    files: Partial<Record<"airports" | "airlines" | "routes", File>>,
+  ) {
+    const formData = new FormData();
+    for (const dataset of ["airports", "airlines", "routes"] as const) {
+      const file = files[dataset];
+      if (file) formData.append(dataset, file);
+    }
+    return request<ImportResponse>("/imports", {
+      method: "POST",
+      body: formData,
     }, token);
   },
 
