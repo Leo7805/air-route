@@ -7,6 +7,8 @@ import type {
   Page,
   RouteDetails,
   RouteSummary,
+  TravelPlan,
+  TravelPlanList,
 } from "../types/api";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
@@ -136,6 +138,58 @@ export const api = {
 
   route(token: string, routeId: number, signal?: AbortSignal) {
     return request<RouteDetails>(`/routes/${routeId}`, { signal }, token);
+  },
+
+  travelPlans(token: string, signal?: AbortSignal) {
+    return request<TravelPlanList>("/travel-plans", { signal }, token);
+  },
+
+  travelPlan(token: string, planId: number, signal?: AbortSignal) {
+    return request<TravelPlan>(`/travel-plans/${planId}`, { signal }, token);
+  },
+
+  createTravelPlan(
+    token: string,
+    data: Pick<TravelPlan, "name" | "departure_date" | "return_date">,
+  ) {
+    return request<TravelPlan>("/travel-plans", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, token);
+  },
+
+  updateTravelPlan(
+    token: string,
+    planId: number,
+    data: Pick<TravelPlan, "name" | "departure_date" | "return_date">,
+  ) {
+    return request<TravelPlan>(`/travel-plans/${planId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }, token);
+  },
+
+  async deleteTravelPlan(token: string, planId: number): Promise<void> {
+    await request<void>(`/travel-plans/${planId}`, {
+      method: "DELETE",
+    }, token);
+  },
+
+  addRouteToTravelPlan(token: string, planId: number, routeId: number) {
+    return request<TravelPlan>(`/travel-plans/${planId}/routes`, {
+      method: "POST",
+      body: JSON.stringify({ route_id: routeId }),
+    }, token);
+  },
+
+  async removeRouteFromTravelPlan(
+    token: string,
+    planId: number,
+    routeId: number,
+  ): Promise<void> {
+    await request<void>(`/travel-plans/${planId}/routes/${routeId}`, {
+      method: "DELETE",
+    }, token);
   },
 
   accounts(token: string) {

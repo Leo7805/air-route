@@ -69,3 +69,16 @@ export interface RouteDetails extends RouteSummary {
   origin_airport: Airport | null;
   destination_airport: Airport | null;
 }
+
+export interface TravelPlan {
+  plan_id: number;
+  name: string;
+  departure_date: string;
+  return_date: string;
+  routes: number[];
+}
+
+export interface TravelPlanList {
+  total: number;
+  items: TravelPlan[];
+}

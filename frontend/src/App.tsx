@@ -6,6 +6,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AccountsPage } from "./pages/AccountsPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ExplorerPage } from "./pages/ExplorerPage";
+import { TravelPlansPage } from "./pages/TravelPlansPage";
 import { PlaceholderPage } from "./pages/PlaceholderPage";
 
 export function App() {
@@ -15,7 +16,7 @@ export function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route element={<ExplorerPage />} path="/explorer" />
-          <Route element={<PlaceholderPage />} path="/travel-plans" />
+          <Route element={<TravelPlansPage />} path="/travel-plans" />
           <Route element={<AdminRoute />}>
             <Route element={<PlaceholderPage />} path="/imports" />
             <Route element={<AccountsPage />} path="/accounts" />

@@ -32,6 +32,8 @@ button { cursor: pointer; }
 .button:disabled { cursor: wait; opacity: .65; }
 .button-primary { background: #203b82; color: white; }
 .button-primary:hover:not(:disabled) { background: #172e6b; }
+.button-danger { background: #a13d3d; color: white; }
+.button-danger:hover:not(:disabled) { background: #843131; }
 .button-quiet { background: transparent; color: #59657b; padding: 9px 10px; }
 .button-quiet:hover:not(:disabled) { background: #f0f2f7; }
 .button-wide { width: 100%; }
@@ -107,6 +109,24 @@ tbody tr:last-child td { border-bottom: 0; }
 .clickable-row { cursor: pointer; }
 .clickable-row:hover, .clickable-row:focus { background: #f7f8fb; outline: 0; }
 .pagination { align-items: center; border-top: 1px solid #edf0f5; color: #657087; display: flex; font-size: .8rem; justify-content: center; gap: 18px; margin-top: 18px; padding-top: 18px; }
+.plans-page { display: grid; gap: 24px; }
+.plans-layout { align-items: start; display: grid; gap: 24px; grid-template-columns: minmax(240px, .75fr) minmax(0, 1.5fr); }
+.plans-list, .plan-editor, .route-manager { min-width: 0; }
+.plan-list { display: grid; gap: 8px; }
+.plan-list-item { background: transparent; border: 1px solid #edf0f5; border-radius: 9px; color: #39445b; display: grid; gap: 5px; padding: 13px; text-align: left; }
+.plan-list-item:hover, .plan-list-item-active { background: #eef2ff; border-color: #cbd6f5; color: #203b82; }
+.plan-list-item strong { font-size: .9rem; }
+.plan-list-item span, .plan-list-item small { color: #7b8498; font-size: .74rem; }
+.plan-create-button { margin-top: 20px; }
+.plan-form { max-width: 540px; }
+.form-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.plan-details h3 { border-top: 1px solid #edf0f5; font-size: 1rem; margin: 30px 0 16px; padding-top: 24px; }
+.associated-routes { display: grid; gap: 8px; }
+.associated-route, .route-preview { align-items: center; background: #f7f8fb; border: 1px solid #edf0f5; border-radius: 9px; display: flex; gap: 18px; justify-content: space-between; padding: 13px 15px; }
+.associated-route div, .route-preview div { display: grid; gap: 5px; min-width: 0; }
+.associated-route span, .route-preview span { color: #657087; font-size: .78rem; overflow-wrap: anywhere; }
+.route-lookup { align-items: end; display: flex; gap: 12px; max-width: 470px; }
+.route-lookup label { flex: 1; }
 @media (max-width: 850px) {
   .auth-page { grid-template-columns: 1fr; }
   .auth-visual { min-height: 330px; padding: 48px 9vw; }
@@ -123,4 +143,6 @@ tbody tr:last-child td { border-bottom: 0; }
   .detail-panel { position: static; }
   .explorer-filters { align-items: stretch; flex-direction: column; }
   .explorer-filters label, .explorer-filters .search-field { min-width: 0; width: 100%; }
+  .plans-layout { grid-template-columns: 1fr; }
+  .route-lookup { align-items: stretch; flex-direction: column; }
 }
