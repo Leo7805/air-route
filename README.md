@@ -1,19 +1,50 @@
 # AirRoute
 
-**Airline Route Explorer & Travel Planner**
+Explore airline networks and organise personal travel plans.
 
-AirRoute is a local full-stack application for exploring imported airport,
-airline and route data and organising private travel plans.
+![AirRoute Aviation Explorer](docs/screenshots/aviation-explorer.png)
+
+AirRoute is a local full-stack application for browsing imported airport,
+airline and route data, saving routes to private travel plans, and exporting
+upcoming trips. Aviation records are demonstration data, not live flight schedules.
 
 ## Features
 
 - JWT login with User and Admin roles
-- Searchable, paginated airport, airline and route explorer
+- Searchable, paginated airport, airline and route explorer with non-modal details
 - Private travel-plan CRUD with route associations
 - JSON exports and PNG timelines for upcoming plans
 - Admin CSV imports with validation, atomic replacement and route protection
 - Admin account creation, activation, deactivation and deletion
 - Swagger/OpenAPI documentation for the Flask API
+
+## Application preview
+
+Captured from the real React frontend and Flask API using an isolated SQLite
+database populated with the repository's CSV fixtures. The temporary User account
+owns all three demonstration plans; each contains two valid routes.
+Select a gallery image to view it at full resolution.
+
+| Travel Plans | Admin Data Import |
+| --- | --- |
+| [![Travel Plans with two associated routes](docs/screenshots/travel-plans.png)](docs/screenshots/travel-plans.png) | [![Admin CSV import with three fixture files selected](docs/screenshots/data-import.png)](docs/screenshots/data-import.png) |
+| Manage saved routes, browse the network, and export plans. | Select airport, airline and route CSVs with clear replacement rules. |
+
+### Upcoming travel timeline
+
+The unmodified PNG returned by `GET /travel-plans/export?format=image`, showing
+three future plans and their associated routes.
+
+![Backend-generated travel plans timeline](docs/screenshots/travel-timeline.png)
+
+<details>
+<summary>Route Details: inspect a route while keeping the table accessible</summary>
+
+The non-modal drawer keeps the table at normal brightness and offers Add to Plan.
+
+![Non-modal Route Details drawer](docs/screenshots/route-details.png)
+
+</details>
 
 ## Stack and structure
 
@@ -94,8 +125,7 @@ npm run test:auth
 ## Limitations
 
 The application uses imported demonstration data rather than live schedules.
-It does not provide fares, booking, payments or a public deployment. No
-screenshots or hosted demo are included in this repository.
+It does not provide fares, booking, payments or a public deployment.
 
 See [docs/PROJECT.md](docs/PROJECT.md) for architecture and [docs/API.md](docs/API.md)
 for the concise endpoint index. Swagger remains the detailed API source of truth.
